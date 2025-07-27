@@ -134,70 +134,68 @@ function addMessage(message, sender, save = true) {
     messageElement.appendChild(img);
   } else {
     const codeBlockRegex = /```(\w+)?\n([\s\S]+?)```/g;
-    let lastIndex = 0;
-    let match;
-    let foundCodeBlock = false;
+    if (codeBlockRegex.test(message)) {
+        let lastIndex = 0;
+        let match;
 
-    while ((match = codeBlockRegex.exec(message)) !== null) {
-      foundCodeBlock = true;
-      // Adiciona o texto antes do bloco de código
-      if (match.index > lastIndex) {
-        messageElement.appendChild(document.createTextNode(message.substring(lastIndex, match.index)));
-      }
+        while ((match = codeBlockRegex.exec(message)) !== null) {
+            // Adiciona o texto antes do bloco de código
+            if (match.index > lastIndex) {
+                messageElement.appendChild(document.createTextNode(message.substring(lastIndex, match.index)));
+            }
 
-      // Adiciona o bloco de código
-      const codeContainer = document.createElement('div');
-      codeContainer.className = 'code-container';
+            // Adiciona o bloco de código
+            const codeContainer = document.createElement('div');
+            codeContainer.className = 'code-container';
 
-      const pre = document.createElement('pre');
-      const code = document.createElement('code');
-      const language = match[1] || 'plaintext';
-      code.className = `language-${language}`;
-      code.textContent = match[2];
-      pre.appendChild(code);
+            const pre = document.createElement('pre');
+            const code = document.createElement('code');
+            const language = match[1] || 'plaintext';
+            code.className = `language-${language}`;
+            code.textContent = match[2];
+            pre.appendChild(code);
 
-      const codeToolbar = document.createElement('div');
-      codeToolbar.className = 'code-toolbar';
+            const codeToolbar = document.createElement('div');
+            codeToolbar.className = 'code-toolbar';
 
-      const copyButton = document.createElement('button');
-      copyButton.innerHTML = '<i class="fas fa-copy"></i> Copiar';
-      copyButton.addEventListener('click', () => {
-        navigator.clipboard.writeText(match[2]);
-      });
-      codeToolbar.appendChild(copyButton);
+            const copyButton = document.createElement('button');
+            copyButton.innerHTML = '<i class="fas fa-copy"></i> Copiar';
+            copyButton.addEventListener('click', () => {
+                navigator.clipboard.writeText(match[2]);
+            });
+            codeToolbar.appendChild(copyButton);
 
-      const executeButton = document.createElement('button');
-      executeButton.innerHTML = '<i class="fas fa-play"></i> Executar';
-      executeButton.addEventListener('click', () => {
-        chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-          chrome.scripting.executeScript({
-            target: { tabId: tabs[0].id },
-            func: (codeToExecute) => {
-              try {
-                eval(codeToExecute);
-              } catch (e) {
-                console.error("Erro ao executar o código:", e);
-              }
-            },
-            args: [match[2]]
-          });
-        });
-      });
-      codeToolbar.appendChild(executeButton);
+            const executeButton = document.createElement('button');
+            executeButton.innerHTML = '<i class="fas fa-play"></i> Executar';
+            executeButton.addEventListener('click', () => {
+                chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+                    chrome.scripting.executeScript({
+                        target: { tabId: tabs[0].id },
+                        func: (codeToExecute) => {
+                            try {
+                                eval(codeToExecute);
+                            } catch (e) {
+                                console.error("Erro ao executar o código:", e);
+                            }
+                        },
+                        args: [match[2]]
+                    });
+                });
+            });
+            codeToolbar.appendChild(executeButton);
 
-      codeContainer.appendChild(pre);
-      codeContainer.appendChild(codeToolbar);
-      messageElement.appendChild(codeContainer);
+            codeContainer.appendChild(pre);
+            codeContainer.appendChild(codeToolbar);
+            messageElement.appendChild(codeContainer);
 
-      lastIndex = codeBlockRegex.lastIndex;
-    }
+            lastIndex = codeBlockRegex.lastIndex;
+        }
 
-    // Adiciona o texto restante após o último bloco de código
-    if (lastIndex < message.length) {
-      messageElement.appendChild(document.createTextNode(message.substring(lastIndex)));
-    }
-
-    if (!foundCodeBlock) {
+        // Adiciona o texto restante após o último bloco de código
+        if (lastIndex < message.length) {
+            messageElement.appendChild(document.createTextNode(message.substring(lastIndex)));
+        }
+    } else {
         messageElement.textContent = message;
     }
   }
