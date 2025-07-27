@@ -247,7 +247,8 @@ function addMessage(message, sender, save = true) {
   }
 
   if (sender !== 'ai' || !message.startsWith("Ocorreu um erro")) {
-    if (typeof message !== 'object' && !/```/g.test(message)) {
+    const hasCode = /```/g.test(message);
+    if (typeof message !== 'object' && !hasCode) {
       const copyButton = document.createElement('button');
       copyButton.innerHTML = '<i class="fas fa-copy"></i>';
       copyButton.addEventListener('click', () => {
@@ -256,7 +257,7 @@ function addMessage(message, sender, save = true) {
       messageElement.appendChild(copyButton);
     }
 
-    if (sender === 'ai') {
+    if (sender === 'ai' && !hasCode) {
       const ttsButton = document.createElement('button');
       ttsButton.innerHTML = '<i class="fas fa-volume-up"></i>';
       ttsButton.addEventListener('click', () => {
@@ -346,6 +347,12 @@ function getGroqCompletion(userMessage) {
 
   if (!apiKey) {
     addMessage('Chave de API não configurada. Por favor, configure na página de opções.', 'ai');
+    return;
+  }
+
+  if (!chats[activeChat]) {
+    hideTypingIndicator();
+    addMessage("Ocorreu um erro ao selecionar o chat. Por favor, tente novamente.", "ai");
     return;
   }
 
