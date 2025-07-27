@@ -149,100 +149,75 @@ function addMessage(message, sender, save = true) {
     img.style.maxWidth = '100%';
     messageElement.appendChild(img);
   } else {
-    const codeBlockRegex = /```(\w+)?\n([\s\S]+?)```/g;
-    if (codeBlockRegex.test(message)) {
-        let lastIndex = 0;
-        let match;
+    messageElement.innerHTML = marked.parse(message);
+    const codeBlocks = messageElement.querySelectorAll('pre > code');
+    codeBlocks.forEach(codeBlock => {
+        const pre = codeBlock.parentElement;
+        const codeContainer = document.createElement('div');
+        codeContainer.className = 'code-container';
 
-        while ((match = codeBlockRegex.exec(message)) !== null) {
-            // Adiciona o texto antes do bloco de código
-            if (match.index > lastIndex) {
-                messageElement.appendChild(document.createTextNode(message.substring(lastIndex, match.index)));
+        const codeToolbar = document.createElement('div');
+        codeToolbar.className = 'code-toolbar';
+
+        let lastCopiedButton = null;
+
+        const copyButton = document.createElement('button');
+        copyButton.innerHTML = '<i class="fas fa-copy"></i> Copiar';
+        copyButton.addEventListener('click', (e) => {
+            if (lastCopiedButton) {
+                lastCopiedButton.innerHTML = '<i class="fas fa-copy"></i> Copiar';
             }
 
-            // Adiciona o bloco de código
-            const codeContainer = document.createElement('div');
-            codeContainer.className = 'code-container';
+            const button = e.target.closest('button');
+            const codeToCopy = button.closest('.code-container').querySelector('code').textContent;
+            navigator.clipboard.writeText(codeToCopy);
+            button.innerHTML = '<i class="fas fa-check"></i> Copiado!';
+            lastCopiedButton = button;
 
-            const pre = document.createElement('pre');
-            const code = document.createElement('code');
-            const language = match[1] || 'plaintext';
-            code.className = `language-${language}`;
-            code.textContent = match[2];
-            pre.appendChild(code);
-
-            const codeToolbar = document.createElement('div');
-            codeToolbar.className = 'code-toolbar';
-
-            let lastCopiedButton = null;
-
-            const copyButton = document.createElement('button');
-            copyButton.innerHTML = '<i class="fas fa-copy"></i> Copiar';
-            copyButton.addEventListener('click', (e) => {
-                if (lastCopiedButton) {
-                    lastCopiedButton.innerHTML = '<i class="fas fa-copy"></i> Copiar';
+            setTimeout(() => {
+                if (lastCopiedButton === button) {
+                    button.innerHTML = '<i class="fas fa-copy"></i> Copiar';
+                    lastCopiedButton = null;
                 }
+            }, 2000);
+        });
+        codeToolbar.appendChild(copyButton);
 
-                const button = e.target.closest('button');
-                const codeToCopy = button.closest('.code-container').querySelector('code').textContent;
-                navigator.clipboard.writeText(codeToCopy);
-                button.innerHTML = '<i class="fas fa-check"></i> Copiado!';
-                lastCopiedButton = button;
-
-                setTimeout(() => {
-                    if (lastCopiedButton === button) {
-                        button.innerHTML = '<i class="fas fa-copy"></i> Copiar';
-                        lastCopiedButton = null;
-                    }
-                }, 2000);
-            });
-            codeToolbar.appendChild(copyButton);
-
-            const executeButton = document.createElement('button');
-            executeButton.innerHTML = '<i class="fas fa-play"></i> Executar';
-            executeButton.addEventListener('click', (e) => {
-                if (confirm("Tem certeza de que deseja executar este código? A execução de código de fontes não confiáveis pode ser perigosa.")) {
-                    const codeToExecute = e.target.closest('.code-container').querySelector('code').textContent;
-                    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-                        chrome.scripting.executeScript({
-                            target: { tabId: tabs[0].id },
-                            func: (code) => {
-                                try {
-                                    return { result: eval(code) };
-                                } catch (e) {
-                                    return { error: e.message };
-                                }
-                            },
-                            args: [codeToExecute]
-                        }, (results) => {
-                            if (chrome.runtime.lastError) {
-                                addMessage(`Erro ao executar o script: ${chrome.runtime.lastError.message}`, 'ai');
-                            } else if (results && results[0] && results[0].result) {
-                                const result = results[0].result;
-                                if (result.error) {
-                                    addMessage(`Erro na execução: ${result.error}`, 'ai');
-                                }
+        const executeButton = document.createElement('button');
+        executeButton.innerHTML = '<i class="fas fa-play"></i> Executar';
+        executeButton.addEventListener('click', (e) => {
+            if (confirm("Tem certeza de que deseja executar este código? A execução de código de fontes não confiáveis pode ser perigosa.")) {
+                const codeToExecute = e.target.closest('.code-container').querySelector('code').textContent;
+                chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+                    chrome.scripting.executeScript({
+                        target: { tabId: tabs[0].id },
+                        func: (code) => {
+                            try {
+                                return { result: eval(code) };
+                            } catch (e) {
+                                return { error: e.message };
                             }
-                        });
+                        },
+                        args: [codeToExecute]
+                    }, (results) => {
+                        if (chrome.runtime.lastError) {
+                            addMessage(`Erro ao executar o script: ${chrome.runtime.lastError.message}`, 'ai');
+                        } else if (results && results[0] && results[0].result) {
+                            const result = results[0].result;
+                            if (result.error) {
+                                addMessage(`Erro na execução: ${result.error}`, 'ai');
+                            }
+                        }
                     });
-                }
-            });
-            codeToolbar.appendChild(executeButton);
+                });
+            }
+        });
+        codeToolbar.appendChild(executeButton);
 
-            codeContainer.appendChild(pre);
-            codeContainer.appendChild(codeToolbar);
-            messageElement.appendChild(codeContainer);
-
-            lastIndex = codeBlockRegex.lastIndex;
-        }
-
-        // Adiciona o texto restante após o último bloco de código
-        if (lastIndex < message.length) {
-            messageElement.appendChild(document.createTextNode(message.substring(lastIndex)));
-        }
-    } else {
-        messageElement.textContent = message;
-    }
+        pre.parentNode.insertBefore(codeContainer, pre);
+        codeContainer.appendChild(pre);
+        codeContainer.appendChild(codeToolbar);
+    });
   }
 
   if (sender !== 'ai' || !message.startsWith("Ocorreu um erro")) {
