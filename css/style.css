@@ -161,3 +161,136 @@ body {
 .message:hover button {
   opacity: 1;
 }
+
+.error-message {
+  background-color: #ffdddd;
+  color: #d8000c;
+  border: 1px solid #ffc2c2;
+}
+
+/* Dark Mode */
+.dark-mode {
+  background-color: #18191a;
+  color: #e4e6eb;
+}
+
+.dark-mode #chats-list {
+  background-color: #242526;
+  border-right-color: #3e4042;
+}
+
+.dark-mode #chat-container {
+  background-color: #18191a;
+}
+
+.dark-mode #new-chat {
+  background-color: #3a3b3c;
+}
+
+.dark-mode #new-chat:hover {
+  background-color: #525354;
+}
+
+.dark-mode #chats li.active {
+  background-color: #3a3b3c;
+}
+
+.dark-mode #chats li:not(.active):hover {
+  background-color: #303132;
+}
+
+.dark-mode .user-message {
+  background-color: #007bff;
+}
+
+.dark-mode .ai-message {
+  background-color: #3e4042;
+  color: #e4e6eb;
+}
+
+.dark-mode #chat-input {
+  background-color: #242526;
+}
+
+.dark-mode #message-input {
+  background-color: #3a3b3c;
+  border-color: #3e4042;
+  color: #e4e6eb;
+}
+
+.dark-mode #send-button, .dark-mode #attach-file-button {
+  background-color: #3a3b3c;
+}
+
+.dark-mode #send-button:hover, .dark-mode #attach-file-button:hover {
+  background-color: #525354;
+}
+
+/* Options Page */
+body.options-page {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.options-page h1 {
+  text-align: center;
+  color: #333;
+}
+
+.dark-mode.options-page h1 {
+  color: #e4e6eb;
+}
+
+.options-page div {
+  margin-bottom: 15px;
+  max-width: 500px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.options-page label {
+  display: block;
+  margin-bottom: 5px;
+  font-weight: 500;
+}
+
+.options-page input[type="text"], .options-page select {
+  width: 100%;
+  padding: 10px;
+  border-radius: 5px;
+  border: 1px solid #d1d1d1;
+}
+
+.dark-mode .options-page input[type="text"], .dark-mode .options-page select {
+  background-color: #3a3b3c;
+  border-color: #3e4042;
+  color: #e4e6eb;
+}
+
+.options-page button {
+  width: 100%;
+  padding: 10px;
+  background-color: #007bff;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+  max-width: 500px;
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.options-page button:hover {
+  background-color: #0056b3;
+}
+
+.dark-mode .options-page button {
+  background-color: #3a3b3c;
+}
+
+.dark-mode .options-page button:hover {
+  background-color: #525354;
+}

@@ -26,7 +26,7 @@ function renderChats() {
     });
 
     const deleteButton = document.createElement('button');
-    deleteButton.textContent = 'X';
+    deleteButton.innerHTML = '<i class="fas fa-trash"></i>';
     deleteButton.addEventListener('click', (e) => {
       e.stopPropagation();
       delete chats[chatId];
@@ -87,7 +87,18 @@ function loadChats() {
   });
 }
 
+function applyTheme() {
+  chrome.storage.sync.get('darkMode', (result) => {
+    if (result.darkMode) {
+      document.body.classList.add('dark-mode');
+    } else {
+      document.body.classList.remove('dark-mode');
+    }
+  });
+}
+
 loadChats();
+applyTheme();
 
 function addMessage(message, sender, save = true) {
   if (activeChat && save) {
@@ -97,6 +108,9 @@ function addMessage(message, sender, save = true) {
 
   const messageElement = document.createElement('div');
   messageElement.classList.add('message', `${sender}-message`);
+  if (sender === 'ai' && message.startsWith("Ocorreu um erro")) {
+    messageElement.classList.add('error-message');
+  }
 
   if (typeof message === 'object') {
     const img = document.createElement('img');
@@ -107,9 +121,16 @@ function addMessage(message, sender, save = true) {
     messageElement.textContent = message;
   }
 
+  const copyButton = document.createElement('button');
+  copyButton.innerHTML = '<i class="fas fa-copy"></i>';
+  copyButton.addEventListener('click', () => {
+    navigator.clipboard.writeText(message);
+  });
+  messageElement.appendChild(copyButton);
+
   if (sender === 'ai') {
     const ttsButton = document.createElement('button');
-    ttsButton.textContent = '🔊';
+    ttsButton.innerHTML = '<i class="fas fa-volume-up"></i>';
     ttsButton.addEventListener('click', () => {
       speak(message);
     });
@@ -195,11 +216,14 @@ function getGroqCompletion(userMessage) {
 
       const reader = response.body.getReader();
       const decoder = new TextDecoder("utf-8");
+      const aiMessageElement = addMessage("", 'ai', false);
       let aiMessage = "";
 
       while (true) {
         const { done, value } = await reader.read();
         if (done) {
+          chats[activeChat].messages.push({ content: aiMessage, sender: 'ai' });
+          saveChats();
           break;
         }
         const chunk = decoder.decode(value);
@@ -215,13 +239,19 @@ function getGroqCompletion(userMessage) {
           const { content } = delta;
           if (content) {
             aiMessage += content;
+            aiMessageElement.textContent = aiMessage;
+            chatMessages.scrollTop = chatMessages.scrollHeight;
           }
         }
       }
-      addMessage(aiMessage, 'ai');
     } catch (error) {
-      console.error("Erro ao chamar a API Groq:", error);
-      addMessage("Ocorreu um erro ao se comunicar com a IA.", "ai");
+      console.error("Erro ao chamar a API Groq:", error.message);
+      let errorMessage = "Ocorreu um erro ao se comunicar com a IA.";
+      if (error.response) {
+        const errorData = await error.response.json();
+        errorMessage += `\nDetalhes: ${errorData.error.message}`;
+      }
+      addMessage(errorMessage, "ai");
     }
   });
 }

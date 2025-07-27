@@ -4,7 +4,7 @@
   <title>Configurações do Chat IA</title>
   <link rel="stylesheet" type="text/css" href="css/style.css">
 </head>
-<body>
+<body class="options-page">
   <h1>Configurações do Chat IA</h1>
   <div>
     <label for="api-key">Groq API Key:</label>
@@ -31,6 +31,10 @@
       <option value="compound-beta">compound-beta</option>
       <option value="compound-beta-mini">compound-beta-mini</option>
     </select>
+  </div>
+  <div>
+    <label for="dark-mode">Modo Escuro:</label>
+    <input type="checkbox" id="dark-mode" name="dark-mode">
   </div>
   <button id="save-button">Salvar</button>
   <script src="js/options.js"></script>
