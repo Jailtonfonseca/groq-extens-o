@@ -196,12 +196,14 @@ function addMessage(message, sender, save = true) {
     }
   }
 
-  const copyButton = document.createElement('button');
-  copyButton.innerHTML = '<i class="fas fa-copy"></i>';
-  copyButton.addEventListener('click', () => {
-    navigator.clipboard.writeText(message);
-  });
-  messageElement.appendChild(copyButton);
+  if (typeof message !== 'object') {
+    const copyButton = document.createElement('button');
+    copyButton.innerHTML = '<i class="fas fa-copy"></i>';
+    copyButton.addEventListener('click', () => {
+      navigator.clipboard.writeText(message);
+    });
+    messageElement.appendChild(copyButton);
+  }
 
   if (sender === 'ai') {
     const ttsButton = document.createElement('button');
