@@ -175,27 +175,45 @@ function addMessage(message, sender, save = true) {
 
             const copyButton = document.createElement('button');
             copyButton.innerHTML = '<i class="fas fa-copy"></i> Copiar';
-            copyButton.addEventListener('click', () => {
-                navigator.clipboard.writeText(match[2]);
+            copyButton.addEventListener('click', (e) => {
+                const button = e.target.closest('button');
+                const codeToCopy = button.closest('.code-container').querySelector('code').textContent;
+                navigator.clipboard.writeText(codeToCopy);
+                button.innerHTML = '<i class="fas fa-check"></i> Copiado!';
+                setTimeout(() => {
+                    button.innerHTML = '<i class="fas fa-copy"></i> Copiar';
+                }, 2000);
             });
             codeToolbar.appendChild(copyButton);
 
             const executeButton = document.createElement('button');
             executeButton.innerHTML = '<i class="fas fa-play"></i> Executar';
-            executeButton.addEventListener('click', () => {
-                chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-                    chrome.scripting.executeScript({
-                        target: { tabId: tabs[0].id },
-                        func: (codeToExecute) => {
-                            try {
-                                eval(codeToExecute);
-                            } catch (e) {
-                                console.error("Erro ao executar o código:", e);
+            executeButton.addEventListener('click', (e) => {
+                if (confirm("Tem certeza de que deseja executar este código? A execução de código de fontes não confiáveis pode ser perigosa.")) {
+                    const codeToExecute = e.target.closest('.code-container').querySelector('code').textContent;
+                    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+                        chrome.scripting.executeScript({
+                            target: { tabId: tabs[0].id },
+                            func: (code) => {
+                                try {
+                                    return { result: eval(code) };
+                                } catch (e) {
+                                    return { error: e.message };
+                                }
+                            },
+                            args: [codeToExecute]
+                        }, (results) => {
+                            if (chrome.runtime.lastError) {
+                                addMessage(`Erro ao executar o script: ${chrome.runtime.lastError.message}`, 'ai');
+                            } else if (results && results[0] && results[0].result) {
+                                const result = results[0].result;
+                                if (result.error) {
+                                    addMessage(`Erro na execução: ${result.error}`, 'ai');
+                                }
                             }
-                        },
-                        args: [match[2]]
+                        });
                     });
-                });
+                }
             });
             codeToolbar.appendChild(executeButton);
 
