@@ -50,7 +50,7 @@ function renderMessages() {
   chatMessages.innerHTML = '';
   if (activeChat && chats[activeChat]) {
     chats[activeChat].messages.forEach(message => {
-      addMessage(message.content, message.sender);
+      addMessage(message.content, message.sender, false);
     });
   }
 }
@@ -71,14 +71,19 @@ function saveChats() {
 
 function loadChats() {
   chrome.storage.local.get('chats', (result) => {
-    if (result.chats) {
+    if (result.chats && Object.keys(result.chats).length > 0) {
       chats = result.chats;
-      if (Object.keys(chats).length > 0) {
-        activeChat = Object.keys(chats)[0];
-      }
-      renderChats();
-      renderMessages();
+      activeChat = Object.keys(chats)[0];
+    } else {
+      // Se não houver chats, crie um
+      const chatId = `chat-${Date.now()}`;
+      const chatName = "Chat 1";
+      chats[chatId] = { name: chatName, messages: [] };
+      activeChat = chatId;
+      saveChats();
     }
+    renderChats();
+    renderMessages();
   });
 }
 
