@@ -2,10 +2,10 @@
 @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;500&display=swap');
 
 body {
-  width: 500px;
+  width: 800px;
   font-family: 'Roboto', sans-serif;
   display: flex;
-  height: 600px;
+  height: 700px;
   margin: 0;
   background-color: #f0f2f5;
 }
