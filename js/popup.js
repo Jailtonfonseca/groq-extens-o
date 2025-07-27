@@ -173,7 +173,7 @@ fileInput.addEventListener('change', (e) => {
         },
       };
       addMessage(message, 'user');
-      getGroqCompletion();
+      getGroqCompletion(message);
     };
     reader.readAsDataURL(file);
   }
