@@ -3,12 +3,37 @@
 <head>
   <title>Chat IA</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/styles/default.min.css">
   <link rel="stylesheet" type="text/css" href="css/style.css">
 </head>
 <body>
   <div id="app">
     <div id="chats-list">
       <button id="new-chat">Novo Chat</button>
+      <div id="new-chat-modal" style="display: none;">
+        <h3>Selecione um Modelo</h3>
+        <select id="new-chat-model-select">
+          <option value="gemma2-9b-it">gemma2-9b-it</option>
+          <option value="llama-3.1-8b-instant">llama-3.1-8b-instant</option>
+          <option value="llama-3.3-70b-versatile">llama-3.3-70b-versatile</option>
+          <option value="meta-llama/llama-guard-4-12b">meta-llama/llama-guard-4-12b</option>
+          <option value="whisper-large-v3">whisper-large-v3</option>
+          <option value="whisper-large-v3-turbo">whisper-large-v3-turbo</option>
+          <option value="deepseek-r1-distill-llama-70b">deepseek-r1-distill-llama-70b</option>
+          <option value="meta-llama/llama-4-maverick-17b-128e-instruct">meta-llama/llama-4-maverick-17b-128e-instruct</option>
+          <option value="meta-llama/llama-4-scout-17b-16e-instruct">meta-llama/llama-4-scout-17b-16e-instruct</option>
+          <option value="meta-llama/llama-prompt-guard-2-22m">meta-llama/llama-prompt-guard-2-22m</option>
+          <option value="meta-llama/llama-prompt-guard-2-86m">meta-llama/llama-prompt-guard-2-86m</option>
+          <option value="moonshotai/kimi-k2-instruct">moonshotai/kimi-k2-instruct</option>
+          <option value="qwen/qwen3-32b">qwen/qwen3-32b</option>
+          <option value="playai-tts">playai-tts</option>
+          <option value="playai-tts-arabic">playai-tts-arabic</option>
+          <option value="compound-beta">compound-beta</option>
+          <option value="compound-beta-mini">compound-beta-mini</option>
+        </select>
+        <button id="create-chat-button">Criar</button>
+        <button id="cancel-chat-button">Cancelar</button>
+      </div>
       <ul id="chats"></ul>
     </div>
     <div id="chat-container">
@@ -21,6 +46,7 @@
       </div>
     </div>
   </div>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/highlight.min.js"></script>
   <script src="js/popup.js"></script>
 </body>
 </html>
