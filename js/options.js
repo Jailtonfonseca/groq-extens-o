@@ -24,6 +24,23 @@ saveButton.addEventListener('click', () => {
   });
 });
 
+let unsavedChanges = false;
+
+apiKeyInput.addEventListener('input', () => {
+  unsavedChanges = true;
+});
+
+darkModeToggle.addEventListener('change', () => {
+  unsavedChanges = true;
+});
+
+window.addEventListener('beforeunload', (e) => {
+  if (unsavedChanges) {
+    e.preventDefault();
+    e.returnValue = '';
+  }
+});
+
 testKeyButton.addEventListener('click', async () => {
   const apiKey = apiKeyInput.value;
   if (!apiKey) {
@@ -44,6 +61,7 @@ testKeyButton.addEventListener('click', async () => {
     if (response.ok) {
       testKeyResult.textContent = 'Chave de API válida!';
       testKeyResult.style.color = 'green';
+      unsavedChanges = false;
     } else {
       testKeyResult.textContent = 'Chave de API inválida ou ocorreu um erro.';
       testKeyResult.style.color = 'red';

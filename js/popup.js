@@ -42,6 +42,7 @@ function renderChats() {
     deleteButton.addEventListener('click', (e) => {
       e.stopPropagation();
       if (confirm(`Tem certeza de que deseja excluir o chat "${chat.name}"?`)) {
+        deleteButton.disabled = true;
         delete chats[chatId];
         if (activeChat === chatId) {
           activeChat = null;
@@ -173,15 +174,26 @@ function addMessage(message, sender, save = true) {
             const codeToolbar = document.createElement('div');
             codeToolbar.className = 'code-toolbar';
 
+            let lastCopiedButton = null;
+
             const copyButton = document.createElement('button');
             copyButton.innerHTML = '<i class="fas fa-copy"></i> Copiar';
             copyButton.addEventListener('click', (e) => {
+                if (lastCopiedButton) {
+                    lastCopiedButton.innerHTML = '<i class="fas fa-copy"></i> Copiar';
+                }
+
                 const button = e.target.closest('button');
                 const codeToCopy = button.closest('.code-container').querySelector('code').textContent;
                 navigator.clipboard.writeText(codeToCopy);
                 button.innerHTML = '<i class="fas fa-check"></i> Copiado!';
+                lastCopiedButton = button;
+
                 setTimeout(() => {
-                    button.innerHTML = '<i class="fas fa-copy"></i> Copiar';
+                    if (lastCopiedButton === button) {
+                        button.innerHTML = '<i class="fas fa-copy"></i> Copiar';
+                        lastCopiedButton = null;
+                    }
                 }, 2000);
             });
             codeToolbar.appendChild(copyButton);
@@ -359,19 +371,9 @@ function getGroqCompletion(userMessage) {
         })
       });
 
-      hideTypingIndicator();
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => null);
-        let errorMessage = `Erro na API: ${response.status} ${response.statusText}`;
-        if (errorData && errorData.error && errorData.error.message) {
-          errorMessage += `\nDetalhes: ${errorData.error.message}`;
-        }
-        throw new Error(errorMessage);
-      }
-
       const data = await response.json();
       const aiMessage = data.choices[0].message.content;
+      hideTypingIndicator();
       addMessage(aiMessage, 'ai');
     } catch (error) {
       hideTypingIndicator();
