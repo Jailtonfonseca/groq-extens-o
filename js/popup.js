@@ -149,12 +149,33 @@ function addMessage(message, sender, save = true) {
     img.style.maxWidth = '100%';
     messageElement.appendChild(img);
   } else {
-    messageElement.innerHTML = marked.parse(message);
-    const codeBlocks = messageElement.querySelectorAll('pre > code');
-    codeBlocks.forEach(codeBlock => {
-        const pre = codeBlock.parentElement;
+    const codeBlockRegex = /```(\w+)?\n([\s\S]+?)```/g;
+    const codeBlocks = [];
+    let lastIndex = 0;
+    let match;
+
+    let processedMessage = message;
+    while ((match = codeBlockRegex.exec(message)) !== null) {
+      codeBlocks.push({
+        lang: match[1] || 'plaintext',
+        code: match[2]
+      });
+      processedMessage = processedMessage.replace(match[0], `{{CODE_BLOCK_${codeBlocks.length - 1}}}`);
+    }
+
+    messageElement.innerHTML = marked.parse(processedMessage);
+
+    codeBlocks.forEach((block, index) => {
+      const placeholder = messageElement.querySelector(`p:contains("{{CODE_BLOCK_${index}}}")`);
+      if (placeholder) {
         const codeContainer = document.createElement('div');
         codeContainer.className = 'code-container';
+
+        const pre = document.createElement('pre');
+        const code = document.createElement('code');
+        code.className = `language-${block.lang}`;
+        code.textContent = block.code;
+        pre.appendChild(code);
 
         const codeToolbar = document.createElement('div');
         codeToolbar.className = 'code-toolbar';
@@ -169,7 +190,7 @@ function addMessage(message, sender, save = true) {
             }
 
             const button = e.target.closest('button');
-            const codeToCopy = button.closest('.code-container').querySelector('code').textContent;
+            const codeToCopy = block.code;
             navigator.clipboard.writeText(codeToCopy);
             button.innerHTML = '<i class="fas fa-check"></i> Copiado!';
             lastCopiedButton = button;
@@ -187,7 +208,7 @@ function addMessage(message, sender, save = true) {
         executeButton.innerHTML = '<i class="fas fa-play"></i> Executar';
         executeButton.addEventListener('click', (e) => {
             if (confirm("Tem certeza de que deseja executar este código? A execução de código de fontes não confiáveis pode ser perigosa.")) {
-                const codeToExecute = e.target.closest('.code-container').querySelector('code').textContent;
+                const codeToExecute = block.code;
                 chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
                     chrome.scripting.executeScript({
                         target: { tabId: tabs[0].id },
@@ -214,9 +235,10 @@ function addMessage(message, sender, save = true) {
         });
         codeToolbar.appendChild(executeButton);
 
-        pre.parentNode.insertBefore(codeContainer, pre);
         codeContainer.appendChild(pre);
         codeContainer.appendChild(codeToolbar);
+        placeholder.replaceWith(codeContainer);
+      }
     });
   }
 
