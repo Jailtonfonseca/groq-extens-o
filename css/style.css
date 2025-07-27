@@ -5,9 +5,10 @@ body {
   width: 800px;
   font-family: 'Roboto', sans-serif;
   display: flex;
-  height: 700px;
+  height: 100vh;
   margin: 0;
   background-color: #f0f2f5;
+  overflow: hidden;
 }
 
 #app {
@@ -217,6 +218,39 @@ body {
   background-color: #3a3b3c;
   border-color: #3e4042;
   color: #e4e6eb;
+}
+
+/* Markdown Styles */
+.message h1,
+.message h2,
+.message h3,
+.message h4,
+.message h5,
+.message h6 {
+  margin-top: 0;
+  margin-bottom: 0.5rem;
+}
+
+.message p {
+  margin-bottom: 1rem;
+}
+
+.message ul,
+.message ol {
+  padding-left: 20px;
+  margin-bottom: 1rem;
+}
+
+.message li {
+  margin-bottom: 0.25rem;
+}
+
+.message a {
+  color: #007bff;
+}
+
+.dark-mode .message a {
+  color: #69aaff;
 }
 
 .dark-mode #send-button, .dark-mode #attach-file-button {
