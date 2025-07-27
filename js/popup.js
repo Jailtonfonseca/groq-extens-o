@@ -25,22 +25,38 @@ function renderChats() {
       renderChats();
     });
 
+    const renameButton = document.createElement('button');
+    renameButton.innerHTML = '<i class="fas fa-edit"></i>';
+    renameButton.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const newName = prompt("Digite o novo nome para o chat:", chat.name);
+      if (newName !== null && newName.trim() !== "") {
+        chats[chatId].name = newName.trim();
+        saveChats();
+        renderChats();
+      }
+    });
+
     const deleteButton = document.createElement('button');
     deleteButton.innerHTML = '<i class="fas fa-trash"></i>';
     deleteButton.addEventListener('click', (e) => {
       e.stopPropagation();
-      delete chats[chatId];
-      if (activeChat === chatId) {
-        activeChat = null;
-        if (Object.keys(chats).length > 0) {
-          activeChat = Object.keys(chats)[0];
+      if (confirm(`Tem certeza de que deseja excluir o chat "${chat.name}"?`)) {
+        deleteButton.disabled = true;
+        delete chats[chatId];
+        if (activeChat === chatId) {
+          activeChat = null;
+          if (Object.keys(chats).length > 0) {
+            activeChat = Object.keys(chats)[0];
+          }
+          renderMessages();
         }
-        renderMessages();
+        saveChats();
+        renderChats();
       }
-      saveChats();
-      renderChats();
     });
 
+    chatElement.appendChild(renameButton);
     chatElement.appendChild(deleteButton);
     chatsList.appendChild(chatElement);
   }
@@ -158,29 +174,58 @@ function addMessage(message, sender, save = true) {
             const codeToolbar = document.createElement('div');
             codeToolbar.className = 'code-toolbar';
 
+            let lastCopiedButton = null;
+
             const copyButton = document.createElement('button');
             copyButton.innerHTML = '<i class="fas fa-copy"></i> Copiar';
-            copyButton.addEventListener('click', () => {
-                navigator.clipboard.writeText(match[2]);
+            copyButton.addEventListener('click', (e) => {
+                if (lastCopiedButton) {
+                    lastCopiedButton.innerHTML = '<i class="fas fa-copy"></i> Copiar';
+                }
+
+                const button = e.target.closest('button');
+                const codeToCopy = button.closest('.code-container').querySelector('code').textContent;
+                navigator.clipboard.writeText(codeToCopy);
+                button.innerHTML = '<i class="fas fa-check"></i> Copiado!';
+                lastCopiedButton = button;
+
+                setTimeout(() => {
+                    if (lastCopiedButton === button) {
+                        button.innerHTML = '<i class="fas fa-copy"></i> Copiar';
+                        lastCopiedButton = null;
+                    }
+                }, 2000);
             });
             codeToolbar.appendChild(copyButton);
 
             const executeButton = document.createElement('button');
             executeButton.innerHTML = '<i class="fas fa-play"></i> Executar';
-            executeButton.addEventListener('click', () => {
-                chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-                    chrome.scripting.executeScript({
-                        target: { tabId: tabs[0].id },
-                        func: (codeToExecute) => {
-                            try {
-                                eval(codeToExecute);
-                            } catch (e) {
-                                console.error("Erro ao executar o código:", e);
+            executeButton.addEventListener('click', (e) => {
+                if (confirm("Tem certeza de que deseja executar este código? A execução de código de fontes não confiáveis pode ser perigosa.")) {
+                    const codeToExecute = e.target.closest('.code-container').querySelector('code').textContent;
+                    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+                        chrome.scripting.executeScript({
+                            target: { tabId: tabs[0].id },
+                            func: (code) => {
+                                try {
+                                    return { result: eval(code) };
+                                } catch (e) {
+                                    return { error: e.message };
+                                }
+                            },
+                            args: [codeToExecute]
+                        }, (results) => {
+                            if (chrome.runtime.lastError) {
+                                addMessage(`Erro ao executar o script: ${chrome.runtime.lastError.message}`, 'ai');
+                            } else if (results && results[0] && results[0].result) {
+                                const result = results[0].result;
+                                if (result.error) {
+                                    addMessage(`Erro na execução: ${result.error}`, 'ai');
+                                }
                             }
-                        },
-                        args: [match[2]]
+                        });
                     });
-                });
+                }
             });
             codeToolbar.appendChild(executeButton);
 
@@ -200,26 +245,34 @@ function addMessage(message, sender, save = true) {
     }
   }
 
-  if (typeof message !== 'object' && !/```/g.test(message)) {
-    const copyButton = document.createElement('button');
-    copyButton.innerHTML = '<i class="fas fa-copy"></i>';
-    copyButton.addEventListener('click', () => {
-      navigator.clipboard.writeText(message);
-    });
-    messageElement.appendChild(copyButton);
+  if (sender !== 'ai' || !message.startsWith("Ocorreu um erro")) {
+    if (typeof message !== 'object' && !/```/g.test(message)) {
+      const copyButton = document.createElement('button');
+      copyButton.innerHTML = '<i class="fas fa-copy"></i>';
+      copyButton.addEventListener('click', () => {
+        navigator.clipboard.writeText(message);
+      });
+      messageElement.appendChild(copyButton);
+    }
+
+    if (sender === 'ai') {
+      const ttsButton = document.createElement('button');
+      ttsButton.innerHTML = '<i class="fas fa-volume-up"></i>';
+      ttsButton.addEventListener('click', () => {
+        speak(message);
+      });
+      messageElement.appendChild(ttsButton);
+    }
   }
 
-  if (sender === 'ai') {
-    const ttsButton = document.createElement('button');
-    ttsButton.innerHTML = '<i class="fas fa-volume-up"></i>';
-    ttsButton.addEventListener('click', () => {
-      speak(message);
-    });
-    messageElement.appendChild(ttsButton);
-  }
+  const shouldScroll = chatMessages.scrollTop + chatMessages.clientHeight >= chatMessages.scrollHeight - 20;
 
   chatMessages.appendChild(messageElement);
-  chatMessages.scrollTop = chatMessages.scrollHeight;
+
+  if (shouldScroll) {
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+  }
+
   hljs.highlightAll();
 }
 
@@ -261,16 +314,44 @@ fileInput.addEventListener('change', (e) => {
   }
 });
 
+let apiKey = null;
+
+chrome.storage.sync.get('apiKey', (result) => {
+  if (result.apiKey) {
+    apiKey = result.apiKey;
+  }
+});
+
+function showTypingIndicator() {
+  const typingIndicator = document.createElement('div');
+  typingIndicator.classList.add('message', 'ai-message', 'typing-indicator');
+  typingIndicator.textContent = 'Digitando...';
+  chatMessages.appendChild(typingIndicator);
+  chatMessages.scrollTop = chatMessages.scrollHeight;
+}
+
+function hideTypingIndicator() {
+  const typingIndicator = document.querySelector('.typing-indicator');
+  if (typingIndicator) {
+    typingIndicator.remove();
+  }
+}
+
 function getGroqCompletion(userMessage) {
-  chrome.storage.sync.get(['apiKey', 'model'], async (result) => {
-    if (!result.apiKey) {
-      addMessage('Chave de API não configurada. Por favor, configure na página de opções.', 'ai');
-      return;
-    }
+  if (!navigator.onLine) {
+    addMessage("Você parece estar offline. Por favor, verifique sua conexão com a internet.", "ai");
+    return;
+  }
 
-    const apiKey = result.apiKey;
-    const model = chats[activeChat].model;
+  if (!apiKey) {
+    addMessage('Chave de API não configurada. Por favor, configure na página de opções.', 'ai');
+    return;
+  }
 
+  const model = chats[activeChat].model;
+  showTypingIndicator();
+
+  (async () => {
     try {
       const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
         method: "POST",
@@ -292,64 +373,72 @@ function getGroqCompletion(userMessage) {
 
       const data = await response.json();
       const aiMessage = data.choices[0].message.content;
+      hideTypingIndicator();
       addMessage(aiMessage, 'ai');
     } catch (error) {
-      console.error("Erro ao chamar a API Groq:", error.message);
+      hideTypingIndicator();
+      console.error("Erro ao chamar a API Groq:", error);
       let errorMessage = "Ocorreu um erro ao se comunicar com a IA.";
-      if (error.response) {
-        const errorData = await error.response.json();
-        errorMessage += `\nDetalhes: ${errorData.error.message}`;
+      if (error.message) {
+        errorMessage += `\nDetalhes: ${error.message}`;
       }
       addMessage(errorMessage, "ai");
     }
-  });
+  })();
 }
 
+const TTS_MODEL = "playai-tts";
+
 async function speak(text) {
-  chrome.storage.sync.get(['apiKey'], async (result) => {
-    if (!result.apiKey) {
-      addMessage('Chave de API não configurada. Por favor, configure na página de opções.', 'ai');
-      return;
+  if (!apiKey) {
+    addMessage('Chave de API não configurada. Por favor, configure na página de opções.', 'ai');
+    return;
+  }
+
+  try {
+    const response = await fetch("https://api.groq.com/openai/v1/audio/speech", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${apiKey}`
+      },
+      body: JSON.stringify({
+        model: TTS_MODEL,
+        voice: "Aaliyah-PlayAI",
+        input: text,
+        response_format: "wav"
+      })
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => null);
+      let errorMessage = `Erro na API de TTS: ${response.status} ${response.statusText}`;
+      if (errorData && errorData.error && errorData.error.message) {
+        errorMessage += `\nDetalhes: ${errorData.error.message}`;
+      }
+      throw new Error(errorMessage);
     }
 
-    const apiKey = result.apiKey;
-
-    try {
-      const response = await fetch("https://api.groq.com/openai/v1/audio/speech", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${apiKey}`
-        },
-        body: JSON.stringify({
-          model: "playai-tts",
-          voice: "Aaliyah-PlayAI",
-          input: text,
-          response_format: "wav"
-        })
-      });
-
-      const audioBlob = await response.blob();
-      const audioUrl = URL.createObjectURL(audioBlob);
-      const audio = new Audio(audioUrl);
-      audio.onerror = () => {
-        console.error("Erro ao carregar o áudio.");
-        addMessage("Ocorreu um erro ao carregar o áudio.", "ai");
-      };
-      audio.play().catch(e => {
-        if (e.name === 'NotSupportedError') {
-          console.error("Formato de áudio não suportado.");
-          addMessage("Ocorreu um erro ao reproduzir o áudio: formato não suportado.", "ai");
-        } else {
-          console.error("Erro ao reproduzir o áudio:", e);
-          addMessage("Ocorreu um erro ao reproduzir o áudio.", "ai");
-        }
-      });
-    } catch (error) {
-      console.error("Erro ao chamar a API de TTS da Groq:", error);
-      addMessage("Ocorreu um erro ao gerar o áudio.", "ai");
-    }
-  });
+    const audioBlob = await response.blob();
+    const audioUrl = URL.createObjectURL(audioBlob);
+    const audio = new Audio(audioUrl);
+    audio.onerror = () => {
+      console.error("Erro ao carregar o áudio.");
+      addMessage("Ocorreu um erro ao carregar o áudio.", "ai");
+    };
+    audio.play().catch(e => {
+      if (e.name === 'NotSupportedError') {
+        console.error("Formato de áudio não suportado.");
+        addMessage("Ocorreu um erro ao reproduzir o áudio: formato não suportado.", "ai");
+      } else {
+        console.error("Erro ao reproduzir o áudio:", e);
+        addMessage("Ocorreu um erro ao reproduzir o áudio.", "ai");
+      }
+    });
+  } catch (error) {
+    console.error("Erro ao chamar a API de TTS da Groq:", error);
+    addMessage(`Ocorreu um erro ao gerar o áudio. Detalhes: ${error.message}`, "ai");
+  }
 }
 
 console.log("popup.js carregado");
