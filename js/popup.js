@@ -136,8 +136,10 @@ function addMessage(message, sender, save = true) {
     const codeBlockRegex = /```(\w+)?\n([\s\S]+?)```/g;
     let lastIndex = 0;
     let match;
+    let foundCodeBlock = false;
 
     while ((match = codeBlockRegex.exec(message)) !== null) {
+      foundCodeBlock = true;
       // Adiciona o texto antes do bloco de código
       if (match.index > lastIndex) {
         messageElement.appendChild(document.createTextNode(message.substring(lastIndex, match.index)));
@@ -194,9 +196,13 @@ function addMessage(message, sender, save = true) {
     if (lastIndex < message.length) {
       messageElement.appendChild(document.createTextNode(message.substring(lastIndex)));
     }
+
+    if (!foundCodeBlock) {
+        messageElement.textContent = message;
+    }
   }
 
-  if (typeof message !== 'object') {
+  if (typeof message !== 'object' && !/```/g.test(message)) {
     const copyButton = document.createElement('button');
     copyButton.innerHTML = '<i class="fas fa-copy"></i>';
     copyButton.addEventListener('click', () => {
@@ -328,7 +334,19 @@ async function speak(text) {
       const audioBlob = await response.blob();
       const audioUrl = URL.createObjectURL(audioBlob);
       const audio = new Audio(audioUrl);
-      audio.play();
+      audio.onerror = () => {
+        console.error("Erro ao carregar o áudio.");
+        addMessage("Ocorreu um erro ao carregar o áudio.", "ai");
+      };
+      audio.play().catch(e => {
+        if (e.name === 'NotSupportedError') {
+          console.error("Formato de áudio não suportado.");
+          addMessage("Ocorreu um erro ao reproduzir o áudio: formato não suportado.", "ai");
+        } else {
+          console.error("Erro ao reproduzir o áudio:", e);
+          addMessage("Ocorreu um erro ao reproduzir o áudio.", "ai");
+        }
+      });
     } catch (error) {
       console.error("Erro ao chamar a API de TTS da Groq:", error);
       addMessage("Ocorreu um erro ao gerar o áudio.", "ai");
