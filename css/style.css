@@ -294,3 +294,36 @@ body.options-page {
 .dark-mode .options-page button:hover {
   background-color: #525354;
 }
+
+.code-container {
+  position: relative;
+  margin-bottom: 15px;
+}
+
+.code-toolbar {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  display: flex;
+  gap: 5px;
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+.code-container:hover .code-toolbar {
+  opacity: 1;
+}
+
+.code-toolbar button {
+  background-color: #f0f0f0;
+  border: 1px solid #d1d1d1;
+  border-radius: 5px;
+  padding: 5px 10px;
+  cursor: pointer;
+}
+
+.dark-mode .code-toolbar button {
+  background-color: #3a3b3c;
+  border-color: #3e4042;
+  color: #e4e6eb;
+}

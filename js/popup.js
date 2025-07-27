@@ -55,14 +55,29 @@ function renderMessages() {
   }
 }
 
+const newChatModal = document.getElementById('new-chat-modal');
+const newChatModelSelect = document.getElementById('new-chat-model-select');
+const createChatButton = document.getElementById('create-chat-button');
+const cancelChatButton = document.getElementById('cancel-chat-button');
+
 newChatButton.addEventListener('click', () => {
+  newChatModal.style.display = 'block';
+});
+
+cancelChatButton.addEventListener('click', () => {
+  newChatModal.style.display = 'none';
+});
+
+createChatButton.addEventListener('click', () => {
   const chatId = `chat-${Date.now()}`;
   const chatName = `Chat ${Object.keys(chats).length + 1}`;
-  chats[chatId] = { name: chatName, messages: [] };
+  const model = newChatModelSelect.value;
+  chats[chatId] = { name: chatName, model: model, messages: [] };
   activeChat = chatId;
   saveChats();
   renderChats();
   renderMessages();
+  newChatModal.style.display = 'none';
 });
 
 function saveChats() {
@@ -118,7 +133,67 @@ function addMessage(message, sender, save = true) {
     img.style.maxWidth = '100%';
     messageElement.appendChild(img);
   } else {
-    messageElement.textContent = message;
+    const codeBlockRegex = /```(\w+)?\n([\s\S]+?)```/g;
+    let lastIndex = 0;
+    let match;
+
+    while ((match = codeBlockRegex.exec(message)) !== null) {
+      // Adiciona o texto antes do bloco de código
+      if (match.index > lastIndex) {
+        messageElement.appendChild(document.createTextNode(message.substring(lastIndex, match.index)));
+      }
+
+      // Adiciona o bloco de código
+      const codeContainer = document.createElement('div');
+      codeContainer.className = 'code-container';
+
+      const pre = document.createElement('pre');
+      const code = document.createElement('code');
+      const language = match[1] || 'plaintext';
+      code.className = `language-${language}`;
+      code.textContent = match[2];
+      pre.appendChild(code);
+
+      const codeToolbar = document.createElement('div');
+      codeToolbar.className = 'code-toolbar';
+
+      const copyButton = document.createElement('button');
+      copyButton.innerHTML = '<i class="fas fa-copy"></i> Copiar';
+      copyButton.addEventListener('click', () => {
+        navigator.clipboard.writeText(match[2]);
+      });
+      codeToolbar.appendChild(copyButton);
+
+      const executeButton = document.createElement('button');
+      executeButton.innerHTML = '<i class="fas fa-play"></i> Executar';
+      executeButton.addEventListener('click', () => {
+        chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+          chrome.scripting.executeScript({
+            target: { tabId: tabs[0].id },
+            func: (codeToExecute) => {
+              try {
+                eval(codeToExecute);
+              } catch (e) {
+                console.error("Erro ao executar o código:", e);
+              }
+            },
+            args: [match[2]]
+          });
+        });
+      });
+      codeToolbar.appendChild(executeButton);
+
+      codeContainer.appendChild(pre);
+      codeContainer.appendChild(codeToolbar);
+      messageElement.appendChild(codeContainer);
+
+      lastIndex = codeBlockRegex.lastIndex;
+    }
+
+    // Adiciona o texto restante após o último bloco de código
+    if (lastIndex < message.length) {
+      messageElement.appendChild(document.createTextNode(message.substring(lastIndex)));
+    }
   }
 
   const copyButton = document.createElement('button');
@@ -139,6 +214,7 @@ function addMessage(message, sender, save = true) {
 
   chatMessages.appendChild(messageElement);
   chatMessages.scrollTop = chatMessages.scrollHeight;
+  hljs.highlightAll();
 }
 
 sendButton.addEventListener('click', () => {
@@ -186,13 +262,8 @@ function getGroqCompletion(userMessage) {
       return;
     }
 
-    if (!result.model) {
-      addMessage('Nenhum modelo selecionado. Por favor, selecione um modelo na página de opções.', 'ai');
-      return;
-    }
-
     const apiKey = result.apiKey;
-    const model = result.model;
+    const model = chats[activeChat].model;
 
     try {
       const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
