@@ -93,7 +93,7 @@ function loadChats() {
       // Se não houver chats, crie um
       const chatId = `chat-${Date.now()}`;
       const chatName = "Chat 1";
-      chats[chatId] = { name: chatName, messages: [] };
+      chats[chatId] = { name: chatName, model: "llama-3.1-8b-instant", messages: [] };
       activeChat = chatId;
       saveChats();
     }
