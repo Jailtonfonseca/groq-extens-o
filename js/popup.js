@@ -209,41 +209,13 @@ function getGroqCompletion(userMessage) {
               return {role: m.sender === 'user' ? 'user' : 'assistant', content: [m.content]};
             }
           }),
-          model: model,
-          stream: true,
+          model: model
         })
       });
 
-      const reader = response.body.getReader();
-      const decoder = new TextDecoder("utf-8");
-      const aiMessageElement = addMessage("", 'ai', false);
-      let aiMessage = "";
-
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) {
-          chats[activeChat].messages.push({ content: aiMessage, sender: 'ai' });
-          saveChats();
-          break;
-        }
-        const chunk = decoder.decode(value);
-        const lines = chunk.split("\n");
-        const parsedLines = lines
-          .map((line) => line.replace(/^data: /, "").trim())
-          .filter((line) => line !== "" && line !== "[DONE]")
-          .map((line) => JSON.parse(line));
-
-        for (const parsedLine of parsedLines) {
-          const { choices } = parsedLine;
-          const { delta } = choices[0];
-          const { content } = delta;
-          if (content) {
-            aiMessage += content;
-            aiMessageElement.textContent = aiMessage;
-            chatMessages.scrollTop = chatMessages.scrollHeight;
-          }
-        }
-      }
+      const data = await response.json();
+      const aiMessage = data.choices[0].message.content;
+      addMessage(aiMessage, 'ai');
     } catch (error) {
       console.error("Erro ao chamar a API Groq:", error.message);
       let errorMessage = "Ocorreu um erro ao se comunicar com a IA.";
