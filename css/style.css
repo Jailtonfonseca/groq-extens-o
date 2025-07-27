@@ -1,0 +1,108 @@
+/* Estilos para a extensão */
+body {
+  width: 500px;
+  font-family: sans-serif;
+  display: flex;
+  height: 600px;
+  margin: 0;
+}
+
+#app {
+  display: flex;
+  width: 100%;
+  height: 100%;
+}
+
+#chats-list {
+  width: 150px;
+  border-right: 1px solid #ccc;
+  padding: 10px;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+}
+
+#new-chat {
+  width: 100%;
+  padding: 10px;
+  margin-bottom: 10px;
+}
+
+#chats {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  overflow-y: auto;
+  flex-grow: 1;
+}
+
+#chats li {
+  padding: 10px;
+  cursor: pointer;
+}
+
+#chats li.active {
+  background-color: #eee;
+}
+
+#chat-container {
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+#chat-messages {
+  flex-grow: 1;
+  overflow-y: auto;
+  padding: 10px;
+  border-bottom: 1px solid #ccc;
+}
+
+.message {
+  margin-bottom: 10px;
+  padding: 5px;
+  border-radius: 5px;
+}
+
+.user-message {
+  background-color: #dcf8c6;
+  align-self: flex-end;
+}
+
+.ai-message {
+  background-color: #f1f0f0;
+  align-self: flex-start;
+}
+
+#chat-input {
+  display: flex;
+  padding: 10px;
+}
+
+#message-input {
+  flex-grow: 1;
+  border-radius: 5px;
+  border: 1px solid #ccc;
+  padding: 5px;
+}
+
+#send-button, #attach-file-button {
+  margin-left: 10px;
+  padding: 5px 10px;
+}
+
+#chats li button {
+  float: right;
+  background: none;
+  border: none;
+  color: red;
+  cursor: pointer;
+}
+
+.message button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 1.2em;
+}
