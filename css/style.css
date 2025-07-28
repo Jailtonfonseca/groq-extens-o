@@ -57,6 +57,9 @@ body {
   border-radius: 5px;
   margin-bottom: 5px;
   transition: background-color 0.3s;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 #chats li.active {
@@ -74,6 +77,22 @@ body {
   flex-direction: column;
   height: 100vh;
   background-color: #ffffff;
+}
+
+#chat-header {
+  padding: 10px;
+  border-bottom: 1px solid #d1d1d1;
+}
+
+#chat-title {
+  margin: 0;
+  font-size: 1.2em;
+}
+
+#chat-model {
+  margin: 0;
+  font-size: 0.8em;
+  color: #666;
 }
 
 #chat-messages {
@@ -337,8 +356,8 @@ body.options-page {
 
 .code-toolbar {
   position: absolute;
-  top: 5px;
-  right: 5px;
+  bottom: 5px;
+  left: 5px;
   display: flex;
   gap: 5px;
   opacity: 0;
