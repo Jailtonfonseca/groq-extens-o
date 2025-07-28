@@ -195,35 +195,18 @@ function addMessage(message, sender, save = true) {
         });
         codeToolbar.appendChild(copyButton);
 
-        const executeButton = document.createElement('button');
-        executeButton.innerHTML = '<i class="fas fa-play"></i> Executar';
-        executeButton.addEventListener('click', (e) => {
-            if (confirm("Tem certeza de que deseja executar este código? A execução de código de fontes não confiáveis pode ser perigosa.")) {
-                chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-                    chrome.scripting.executeScript({
-                        target: { tabId: tabs[0].id },
-                        func: (code) => {
-                            try {
-                                return { result: eval(code) };
-                            } catch (e) {
-                                return { error: e.message };
-                            }
-                        },
-                        args: [codeText]
-                    }, (results) => {
-                        if (chrome.runtime.lastError) {
-                            addMessage(`Erro ao executar o script: ${chrome.runtime.lastError.message}`, 'ai');
-                        } else if (results && results[0] && results[0].result) {
-                            const result = results[0].result;
-                            if (result.error) {
-                                addMessage(`Erro na execução: ${result.error}`, 'ai');
-                            }
-                        }
-                    });
-                });
-            }
+        const downloadButton = document.createElement('button');
+        downloadButton.innerHTML = '<i class="fas fa-download"></i> Baixar';
+        downloadButton.addEventListener('click', () => {
+            const blob = new Blob([codeText], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `codigo.${lang === 'plaintext' ? 'txt' : lang}`;
+            a.click();
+            URL.revokeObjectURL(url);
         });
-        codeToolbar.appendChild(executeButton);
+        codeToolbar.appendChild(downloadButton);
 
         codeContainer.appendChild(pre);
         codeContainer.appendChild(codeToolbar);
