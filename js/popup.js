@@ -9,6 +9,9 @@ const chatsList = document.getElementById('chats');
 let activeChat = null;
 let chats = {};
 
+const chatTitle = document.getElementById('chat-title');
+const chatModel = document.getElementById('chat-model');
+
 function renderChats() {
   chatsList.innerHTML = '';
   for (const chatId in chats) {
@@ -18,6 +21,8 @@ function renderChats() {
     chatElement.dataset.chatId = chatId;
     if (chatId === activeChat) {
       chatElement.classList.add('active');
+      chatTitle.textContent = chat.name;
+      chatModel.textContent = chat.model;
     }
     chatElement.addEventListener('click', () => {
       activeChat = chatId;
